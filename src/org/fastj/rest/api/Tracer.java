@@ -48,13 +48,13 @@ public interface Tracer {
 	static Tracer get(String name) {
 		Class<? extends Tracer> c = TRACER_MAP.get(name);
 		if (c == null) {
-			LogUtil.error("No tracer {}", name);
+			LogUtil.debug("No tracer {}", name);
 			return nop;
 		}
 
 		try {
 			Tracer t = c.newInstance();
-			LogUtil.info("Tracer init ok , {}", name);
+			LogUtil.debug("Tracer init ok , {}", name);
 			return t;
 		} catch (Throwable e) {
 			LogUtil.error("Tracer init fail , {}", name);

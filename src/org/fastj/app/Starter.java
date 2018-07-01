@@ -14,7 +14,6 @@ import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.fastj.db.HSessionUtils;
 import org.fastj.jetty.RestHandler;
 import org.fastj.log.FileLoggor;
 import org.fastj.log.LogUtil;
@@ -42,6 +41,9 @@ public class Starter {
 			Tracer.load(SysUtil.initClassLoader(new File(traceHome)), traceMain, traceHome);
 		}
 
+		// load global configuration
+		loadConfig();
+
 		Collection<Application> apps = scanApp();
 
 		apps.forEach(app -> {
@@ -53,7 +55,6 @@ public class Starter {
 		});
 
 		String configDir = get(ARG_CFG_DIR, DEF_CFG_DIR);
-		HSessionUtils.scanConfig(configDir);
 
 		ServiceManager smanager = new ServiceManager();
 		smanager.scan(get(ARG_SRV_PKG, ""));
@@ -105,7 +106,7 @@ public class Starter {
 				rlt.add(sc);
 				LogUtil.trace("Find and load SecurityChecker : {}", c.getName());
 			} catch (Throwable e) {
-				LogUtil.error("Init SecurityChecker fail: {}", c.getName());
+				LogUtil.error("Init SecurityChecker fail: {}", e, c.getName());
 			}
 		}
 
@@ -123,11 +124,24 @@ public class Starter {
 				Application app = (Application) c.newInstance();
 				rlt.add(app);
 			} catch (Throwable e) {
-				LogUtil.error("Init app fail: {}", c.getName());
+				LogUtil.error("Init app fail: {}", e, c.getName());
 			}
 		}
 
 		return rlt;
 	}
 
+	public static void loadConfig() {
+		Set<Class<?>> cs = ScanLoader.ins(Args.get(ARG_SRV_PKG, "")).filter(IConfig.class, null).scan();
+
+		for (Class<?> c : cs) {
+			try {
+				IConfig cfg = (IConfig) c.newInstance();
+				cfg.config();
+			} catch (Throwable e) {
+				LogUtil.error("Init config fail: {}", e, c.getName());
+			}
+		}
+
+	}
 }
