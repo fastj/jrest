@@ -84,6 +84,7 @@ public class ServiceManager {
 			}
 
 			String resUri = pathPrefix + p.uri();
+			resUri = resUri.contains("?") ? resUri.substring(0, resUri.indexOf('?')) : resUri;
 			String[] tags = p.tags();
 
 			// Invalid setting
@@ -197,7 +198,7 @@ public class ServiceManager {
 			this.method = m;
 			this.pathDef = pathDef;
 			path = m.getAnnotation(Path.class);
-			pkey = path.method() + path.uri();
+			pkey = path.method() + pathDef;
 			Parameter[] params = m.getParameters();
 			for (int i = 0; i < params.length; i++) {
 				Parameter p = params[i];

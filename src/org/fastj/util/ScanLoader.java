@@ -18,20 +18,18 @@ import java.util.jar.JarFile;
 import org.fastj.log.LogUtil;
 
 public class ScanLoader {
-	
+
 	private String packageName;
-	private String pathPattern;
 	private String namePattern;
 	private Set<Class<?>> classes = new HashSet<>();
 	private ClassFilter filter;
-	
-	public static ScanLoader ins(String packageName){
+
+	public static ScanLoader ins(String packageName) {
 		ScanLoader sl = new ScanLoader();
 		sl.packageName = packageName;
-		sl.pathPattern = packageName.replace(".", "/");
 		return sl;
 	}
-	
+
 	public ScanLoader filter(Class<?> superClass, Class<? extends Annotation> anno) {
 		filter = new ClassFilter(superClass, anno);
 		return this;
@@ -62,9 +60,11 @@ public class ScanLoader {
 		int index = path.lastIndexOf(".jar!");
 		if (index != -1) {
 			path = path.substring(0, index + ".jar".length());
+			path = path.replace("jar:file:", "");
 			path = path.replace("file:", "");
 			searchJar(new File(path), packageName, classFilter);
 		} else {
+			path = path.replace("file:", "");
 			processFile(path, new File(path), packageName, classFilter);
 		}
 	}
@@ -95,9 +95,9 @@ public class ScanLoader {
 	private void searchSubs(String classPath, File directory, String packageName, Filter<Class<?>> classFilter) {
 		File[] fs = directory.listFiles(fileFilter);
 		if (fs != null)
-		for (File file : fs) {
-			processFile(classPath, file, packageName, classFilter);
-		}
+			for (File file : fs) {
+				processFile(classPath, file, packageName, classFilter);
+			}
 	}
 
 	private void processClass(String classPath, File file, String packageName, Filter<Class<?>> classFilter) {
@@ -109,6 +109,15 @@ public class ScanLoader {
 		if (isEmpty(packageName)) {
 			path = removePrefix(path, classPath);
 		}
+
+		String binPath = File.separator + "bin" + File.separator;
+		String clsPath = File.separator + "classes" + File.separator;
+		if (path.contains(binPath)) {
+			path = path.substring(path.indexOf(binPath) + binPath.length());
+		} else if (path.contains(clsPath)) {
+			path = path.substring(path.indexOf(clsPath) + clsPath.length());
+		}
+
 		final String filePathWithDot = path.replace(File.separator, ".");
 
 		int subIndex = -1;
@@ -178,25 +187,6 @@ public class ScanLoader {
 		}
 		return classLoader;
 	}
-	
-	private final boolean matchPackage(String path)
-	{
-		String kpar[] = pathPattern.split("/");
-		String rpar[] = path.split("/");
-		
-		if (kpar.length > rpar.length) return false;
-		
-		for (int i = 0;i < kpar.length; i++)
-		{
-			String o1 = kpar[i];
-			String o2 = rpar[i];
-			
-			if (o1.equals(o2) || o1.startsWith("{")) continue;
-			return false;
-		}
-		
-		return true;
-	}
 
 	private FileFilter fileFilter = new FileFilter() {
 		@Override
@@ -208,11 +198,11 @@ public class ScanLoader {
 					pass = pass && cn.matches(namePattern);
 				}
 			}
-			
+
 			return pass || pathname.isDirectory() || pathname.getName().endsWith(".jar");
 		}
 	};
-	
+
 	public String namePattern() {
 		return namePattern;
 	}
@@ -238,7 +228,7 @@ public class ScanLoader {
 
 		public boolean accept(Class<?> clazz) {
 			boolean pass = true;
-			
+
 			if (superc != null) {
 				pass = pass && superc.isAssignableFrom(clazz) && !superc.equals(clazz);
 			}

@@ -42,6 +42,7 @@ public class RestHandler extends DefaultHandler {
 		req.setUri(URLDecoder.decode(queryStr == null ? uri : uri + "?" + queryStr, encoding));
 		req.setMethod(method);
 		req.setEntity(baseRequest);
+		req.setEncoding(encoding);
 
 		Enumeration<String> hl = baseRequest.getHeaderNames();
 		while (hl.hasMoreElements()) {
