@@ -1,5 +1,7 @@
 package org.fastj.app;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -28,10 +30,16 @@ public final class Args {
 	private static Properties cfgs = new Properties();
 
 	static {
-		String cfgFile = "/" + Args.get(ARG_CFG_DIR, DEF_CFG_DIR) + "/app.properties";
-		try (InputStream in = Args.class.getResourceAsStream(cfgFile)) {
+		String cfgFile = Args.get(ARG_CFG_DIR, DEF_CFG_DIR) + "/app.properties";
+		File cfg = new File(cfgFile);
+		try (InputStream in = cfg.exists() ? new FileInputStream(cfg) : null;
+				InputStream inRes = in != null ? null : Args.class.getResourceAsStream("/" + cfgFile);) {
 			if (in != null) {
 				cfgs.load(in);
+			} else if (inRes != null) {
+				cfgs.load(inRes);
+			} else {
+				LogUtil.trace("No cfg-file[{}] found. default: config/app.properties", cfgFile);
 			}
 		} catch (Throwable e) {
 			LogUtil.error("Load default config fail, {}", e, cfgFile);

@@ -17,6 +17,7 @@ import org.eclipse.jetty.webapp.WebAppContext;
 import org.fastj.jetty.RestHandler;
 import org.fastj.log.FileLoggor;
 import org.fastj.log.LogUtil;
+import org.fastj.rest.api.Responses;
 import org.fastj.rest.api.SecurityChecker;
 import org.fastj.rest.api.ServiceManager;
 import org.fastj.rest.api.Tracer;
@@ -56,7 +57,7 @@ public class Starter {
 
 		String configDir = get(ARG_CFG_DIR, DEF_CFG_DIR);
 
-		ServiceManager smanager = new ServiceManager();
+		ServiceManager smanager = new ServiceManager(loadResponses());
 		smanager.scan(get(ARG_SRV_PKG, ""));
 		smanager.setSecutityChecker(scanSecurityHandler());
 
@@ -129,6 +130,21 @@ public class Starter {
 		}
 
 		return rlt;
+	}
+
+	public static Responses loadResponses() {
+		Set<Class<?>> cs = ScanLoader.ins(Args.get(ARG_SRV_PKG, "")).filter(Responses.class, null).scan();
+		cs.remove(Responses.class);
+		for (Class<?> c : cs) {
+			try {
+				Responses r = (Responses) c.newInstance();
+				return r;
+			} catch (Throwable e) {
+				LogUtil.error("Init config fail: {}", e, c.getName());
+			}
+		}
+
+		return new Responses();
 	}
 
 	public static void loadConfig() {

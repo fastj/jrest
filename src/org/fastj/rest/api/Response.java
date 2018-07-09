@@ -7,40 +7,44 @@ public class Response {
 	private AttachTable attachments = new AttachTable();
 	private Object content;
 
-	public Response(){}
-	
-	public Response(int code, String ct){
+	public Response() {
+	}
+
+	public Response(int code, String ct) {
 		this.httpcode = code;
 		this.content = ct;
 	}
-	
+
 	public int getHttpcode() {
 		return httpcode;
 	}
 
-	public void setHttpcode(int httpcode) {
+	public Response setHttpcode(int httpcode) {
 		this.httpcode = httpcode;
+		return this;
 	}
 
 	public AttachTable getHeaders() {
 		return headers;
 	}
 
-	public void setHeaders(AttachTable headers) {
+	public Response setHeaders(AttachTable headers) {
 		this.headers = headers;
+		return this;
 	}
-	
-	public void addHeader(String key, String v)
-	{
+
+	public Response addHeader(String key, String v) {
 		headers.put(key, v);
+		return this;
 	}
 
 	public Object getContent() {
 		return content;
 	}
-	
-	public void setContent(Object ct) {
+
+	public Response setContent(Object ct) {
 		content = ct;
+		return this;
 	}
 
 	public AttachTable getAttachments() {

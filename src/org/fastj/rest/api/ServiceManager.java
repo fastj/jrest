@@ -28,7 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ServiceManager {
 
-	private static final Response RESP404 = new Response(404, "404 Not Found.");
+	private final Responses responseHolder;
 
 	private Map<String, SHolder> srvMap = new HashMap<>();
 	private List<String> serviceKeys = new ArrayList<>();
@@ -36,9 +36,12 @@ public class ServiceManager {
 	private SecurityChecker secutityChecker;
 	private List<String> serviceTags = new ArrayList<>();
 
-	public Response process(Request<?> req) {
+	public ServiceManager(Responses holder) {
+		this.responseHolder = holder;
+	}
 
-		Response rlt = RESP404;
+	public Response process(Request<?> req) {
+		Response rlt = responseHolder.get404();
 
 		String key = req.getMethod() + req.getUri();
 		key = key.contains("?") ? key.substring(0, key.indexOf('?')) : key;
@@ -226,10 +229,7 @@ public class ServiceManager {
 				return resp;
 			} catch (Throwable e) {
 				LogUtil.error("RestCall Fail", e);
-				resp = new Response();
-				resp.setHttpcode(500);
-				resp.setContent("Server InternalError: " + e.getMessage());
-				return resp;
+				return responseHolder.get500(e);
 			}
 		}
 
@@ -249,13 +249,7 @@ public class ServiceManager {
 				return failResp;
 			}
 
-			try {
-				method.invoke(instance, instance.getArgs());
-			} catch (Throwable e) {
-				instance.setHttpCode(500);
-				instance.setResponse("500 Server InternalError.");
-			}
-
+			method.invoke(instance, instance.getArgs());
 			return instance.getResponse();
 		}
 
@@ -309,10 +303,7 @@ public class ServiceManager {
 					args[i] = wrap(v, type);
 				} catch (Throwable e) {
 					LogUtil.error("Wrap value fail", e);
-					Response msg = new Response();
-					msg.setHttpcode(400);
-					msg.setContent("Parse Request fail :" + e.getMessage());
-					return msg;
+					return responseHolder.get400("Parse Request fail :" + e.getMessage());
 				}
 
 				String key = pkey + "." + p.getName();
@@ -324,9 +315,7 @@ public class ServiceManager {
 			// check parameter
 			List<String> error = CheckUtil.check(rtchk.toArray(new ChkNode[rtchk.size()]));
 			if (!error.isEmpty()) {
-				Response resp = new Response(400, "");
-				resp.setContent(error);
-				return resp;
+				return responseHolder.get400(error);
 			}
 
 			instance.setArgs(args);
