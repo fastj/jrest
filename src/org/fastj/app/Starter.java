@@ -8,9 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.webapp.WebAppContext;
@@ -77,24 +75,33 @@ public class Starter {
 		hl.addHandler(new RestHandler(apiPrefix, smanager));
 
 		if (new File(configDir, "webdefault.xml").exists()) {
-			new File("webapps").mkdirs();
+			File wepbase = new File(get(ARG_WEB_BASE, DEF_WEB_BASE));
+			wepbase.mkdirs();
 			WebAppContext context = new WebAppContext();
 			String webPrefix = get(ARG_WEB_PREFIX, "/");
 			context.setContextPath(webPrefix);
-			context.setResourceBase("./webapps");
+			context.setResourceBase(wepbase.getCanonicalPath());
 			context.setDescriptor(configDir + "/webdefault.xml");
 			hl.addHandler(context);
 		}
 
-		HandlerCollection hc = new HandlerCollection();
-		hc.setHandlers(new Handler[] { hl, new GzipHandler() });
-		server.setHandler(hc);
+		if (getBoolean("gzip", false)) {
+			GzipHandler gzip = new GzipHandler();
+			gzip.setExcludedMethods(new String[] {});
+			gzip.setIncludedMethods(new String[] { "GET", "POST", "PUT" });
+			gzip.setHandler(hl);
+			server.setHandler(gzip);
+		} else {
+			server.setHandler(hl);
+		}
 
 		try {
 			server.start();
+			LogUtil.trace("Server start finished. Listen on {}:{}", get(ARG_IP, "0.0.0.0"), getInt(ARG_PORT, 8080));
 			server.join();
 		} catch (Throwable e) {
-			LogUtil.error("Server error", e);
+			LogUtil.error("Server start failed", e);
+			System.exit(1);
 		}
 	}
 
@@ -149,11 +156,14 @@ public class Starter {
 
 	public static void loadConfig() {
 		Set<Class<?>> cs = ScanLoader.ins(Args.get(ARG_SRV_PKG, "")).filter(IConfig.class, null).scan();
+		Set<Class<?>> defcs = ScanLoader.ins("org.fastj").filter(IConfig.class, null).scan();
+		cs.addAll(defcs);
 
 		for (Class<?> c : cs) {
 			try {
 				IConfig cfg = (IConfig) c.newInstance();
 				cfg.config();
+				LogUtil.trace("Load config£º {}", c.getName());
 			} catch (Throwable e) {
 				LogUtil.error("Init config fail: {}", e, c.getName());
 			}

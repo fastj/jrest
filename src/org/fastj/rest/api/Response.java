@@ -2,7 +2,7 @@ package org.fastj.rest.api;
 
 public class Response {
 
-	private int httpcode = 204;
+	private int httpcode = 200;
 	private AttachTable headers = new AttachTable();
 	private AttachTable attachments = new AttachTable();
 	private Object content;
@@ -49,6 +49,12 @@ public class Response {
 
 	public AttachTable getAttachments() {
 		return attachments;
+	}
+
+	public Response set(int httpcode, Object content) {
+		this.httpcode = httpcode;
+		this.content = content;
+		return this;
 	}
 
 }

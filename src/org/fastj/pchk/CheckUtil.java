@@ -64,7 +64,6 @@ public class CheckUtil {
 					error.add("Check Exception: " + e.getMessage());
 				}
 			}
-			System.out.println("in chk " + node.key);
 			if (node.value != null && !node.value.getClass().isPrimitive() && node.value.getClass() != String.class) {
 				List<String> errs = checkVo(node.value);
 				error.addAll(errs);

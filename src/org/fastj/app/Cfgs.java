@@ -7,32 +7,12 @@ import java.util.Properties;
 
 import org.fastj.log.LogUtil;
 
-public final class Args {
-
-	public static final String ARG_LOG_LEVEL = "log_level";
-	public static final String ARG_LOG_FILE = "log_file";
-	public static final String ARG_CFG_DIR = "config_dir";
-	public static final String ARG_SRV_PKG = "service_package";
-	public static final String ARG_PATH_PREFIX = "path_prefix";
-	public static final String ARG_WEB_PREFIX = "web_prefix";
-	public static final String ARG_WEB_BASE = "web_base";
-	public static final String ARG_IP = "ip";
-	public static final String ARG_PORT = "port";
-	public static final String ARG_SSL = "ssl";
-
-	public static final String ARG_TRACE_HOME = "trace_home";
-	public static final String ARG_TRACE_MAIN = "trace_main";
-
-	public static final int DEF_PORT = 8080;
-	public static final String DEF_LOG_LEVEL = "info";
-	public static final String DEF_LOG_DIR = "logs";
-	public static final String DEF_CFG_DIR = "config";
-	public static final String DEF_WEB_BASE = "webapps";
+public class Cfgs {
 
 	private static Properties cfgs = new Properties();
 
 	static {
-		String cfgFile = Args.get(ARG_CFG_DIR, DEF_CFG_DIR) + "/app.properties";
+		String cfgFile = Args.get(Args.ARG_CFG_DIR, Args.DEF_CFG_DIR) + "/config.properties";
 		File cfg = new File(cfgFile);
 		try (InputStream in = cfg.exists() ? new FileInputStream(cfg) : null;
 				InputStream inRes = in != null ? null : Args.class.getResourceAsStream("/" + cfgFile);) {
@@ -41,28 +21,22 @@ public final class Args {
 			} else if (inRes != null) {
 				cfgs.load(inRes);
 			} else {
-				LogUtil.trace("No cfg-file[{}] found. default: config/app.properties", cfgFile);
+				LogUtil.trace("[Cfgs]No cfg-file[{}] found. default: config/config.properties", cfgFile);
 			}
 		} catch (Throwable e) {
-			LogUtil.error("Load default config fail, {}", e, cfgFile);
+			LogUtil.error("[Cfgs]Load default config fail, {}", e, cfgFile);
 		}
-
 	}
 
-	public static void parse(String... args) {
-		if (args != null) {
-			for (String arg : args) {
-				if (arg.startsWith("--")) {
-					String[] parts = arg.substring(2).split("=", 2);
-					if (parts.length == 2) {
-						cfgs.put(parts[0], parts[1]);
-					} else {
-						LogUtil.error("invalid args : {}", arg);
-					}
-				} else if (arg.startsWith("-")) {
-					cfgs.put(arg.substring(1), "true");
-				}
-			}
+	public static void append(File conf) {
+		if (conf == null) {
+			return;
+		}
+
+		try (InputStream in = new FileInputStream(conf);) {
+			cfgs.load(in);
+		} catch (Throwable e) {
+			LogUtil.error("[Cfgs]Load config fail: {}", e, conf);
 		}
 	}
 

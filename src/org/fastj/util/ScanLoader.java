@@ -168,11 +168,7 @@ public class ScanLoader {
 		Set<String> paths = new HashSet<String>();
 		while (resources.hasMoreElements()) {
 			URL url = resources.nextElement();
-			File f = new File(url.getFile());
-			try {
-				paths.add(f.getCanonicalPath());
-			} catch (IOException e) {
-			}
+			paths.add(url.toString());
 		}
 		return paths;
 	}

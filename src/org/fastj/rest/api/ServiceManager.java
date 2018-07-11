@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.fastj.app.Args;
 import org.fastj.log.LogUtil;
 import org.fastj.pchk.CheckUtil;
 import org.fastj.pchk.CheckUtil.ChkNode;
@@ -24,10 +25,11 @@ import org.fastj.util.ScanLoader;
 import org.fastj.rest.annotation.RAuth;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ServiceManager {
-
+	private static ObjectMapper mapper = new ObjectMapper();
 	private final Responses responseHolder;
 
 	private Map<String, SHolder> srvMap = new HashMap<>();
@@ -36,8 +38,13 @@ public class ServiceManager {
 	private SecurityChecker secutityChecker;
 	private List<String> serviceTags = new ArrayList<>();
 
+	static {
+		boolean flag = Args.getBoolean("fail_on_unknown_properties", true);
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, flag);
+	}
+
 	public ServiceManager(Responses holder) {
-		this.responseHolder = holder;
+		this.responseHolder = holder == null ? new Responses() : holder;
 	}
 
 	public Response process(Request<?> req) {
@@ -187,6 +194,7 @@ public class ServiceManager {
 	}
 
 	private class SHolder {
+
 		private Class<? extends RestService> clazz;
 		private Method method;
 		private String pathDef;
@@ -345,7 +353,6 @@ public class ServiceManager {
 				return null;
 			}
 
-			ObjectMapper mapper = new ObjectMapper();
 			TypeReference<T> type = new TypeReference<T>() {
 				public Type getType() {
 					return clazz;
